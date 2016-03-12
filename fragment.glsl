@@ -2,8 +2,9 @@
 
 uniform vec3 triangleColor;
 out vec4 outColor;
+in vec3 Color;
 
 void main()
 {
-  outColor = vec4(triangleColor, 1.0);
+  outColor = vec4(Color, 1.0);
 }

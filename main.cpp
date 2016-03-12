@@ -110,7 +110,15 @@ void game_loop(GLFWwindow* window) {
   GLuint vertexBuffer;
   glGenBuffers(1, &vertexBuffer);
 
-  float vertices[] = {0.0f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f};
+  float vertices[] = {
+    0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+    0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+
+    0.5f, 0.5f, 0.8f, 0.3f, 0.8f,
+    -0.5f, -0.5f, 7.0f, 1.0f, 3.0f,
+    -0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+  };
 
   GLuint vbo;
   glGenBuffers(1, &vbo);
@@ -136,11 +144,15 @@ void game_loop(GLFWwindow* window) {
   glUseProgram(shaderProgram);
 
   GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
   glEnableVertexAttribArray(posAttrib);
 
+  GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
+  glEnableVertexAttribArray(colAttrib);
+  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
+
   GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
-  glUniform3f(uniColor, 1.0f, 0.0f, 0.0f);
+  glUniform3f(uniColor, 1.5f, 0.0f, 0.0f);
 
   auto t_start = std::chrono::high_resolution_clock::now();
   while (!glfwWindowShouldClose(window)) {
@@ -151,8 +163,8 @@ void game_loop(GLFWwindow* window) {
 
     auto t_now = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
-    glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.0f, 0.0f);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glfwSwapBuffers(window);
   }
