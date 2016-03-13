@@ -7,6 +7,9 @@
 // GLFW
 #include <GLFW/glfw3.h>
 
+// TGA Image
+#include <tgaimage.h>
+
 #include <string>
 #include <stdio.h>
 #include <fstream>
@@ -110,31 +113,36 @@ void game_loop(GLFWwindow* window) {
   GLuint vertexBuffer;
   glGenBuffers(1, &vertexBuffer);
 
+  // Position      Color             Texture coords
   float vertices[] = {
-    0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
-    0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+    0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+    0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 
+    -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-    0.5f, 0.5f, 0.8f, 0.3f, 0.8f,
-    -0.5f, -0.5f, 7.0f, 1.0f, 3.0f,
-    -0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+    0.5f, 0.5f, 0.6f, 0.3f, 0.6f, 1.0f, 0.0f,
+    -0.5f, -0.5f, 0.6f, 0.3f, 0.6f, 0.0f, 1.0f,
+    -0.5f, 0.5f, 0.6f, 0.3f, 0.6, 0.0f, 0.0f,
   };
 
+  // sending vertices to the graphic cards and making it active
   GLuint vbo;
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+  // Vao for caching attributes!
   GLuint vao;
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 
+  // Compiling shaders
   ShaderSource vs("vertex.glsl");
   GLuint vertexShader = vs.compile(GL_VERTEX_SHADER);
 
   ShaderSource fs("fragment.glsl");
   GLuint fragmentShader = fs.compile(GL_FRAGMENT_SHADER);
 
+  // Combining all shaders together
   GLuint shaderProgram = glCreateProgram();
   glAttachShader(shaderProgram, vertexShader);
   glAttachShader(shaderProgram, fragmentShader);
@@ -143,26 +151,56 @@ void game_loop(GLFWwindow* window) {
   glLinkProgram(shaderProgram);
   glUseProgram(shaderProgram);
 
+  // Here are 3 attributes - for position, color and texture and a way how to access it from the vertices attributes
   GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
+  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), 0);
   glEnableVertexAttribArray(posAttrib);
 
   GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
   glEnableVertexAttribArray(colAttrib);
-  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
+  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(2*sizeof(float)));
 
+  GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
+  glEnableVertexAttribArray(texAttrib);
+  glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(5*sizeof(float)));
+
+  // UNIFORM = global variable to set a color of a shape globally
   GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
   glUniform3f(uniColor, 1.5f, 0.0f, 0.0f);
 
-  auto t_start = std::chrono::high_resolution_clock::now();
+  // TEXTURE
+  GLuint tex; 
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+
+  // TEXTURE !!
+  int width, height;
+  TGAImage img;
+
+  if (!img.read_tga_file("sample.tga")) {
+    std::cerr << "Nepovedlo se" << std::endl;
+  }
+
+  width = img.get_width() * 2;
+  height = img.get_height();
+  unsigned char* image = img.buffer();
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // auto t_start = std::chrono::high_resolution_clock::now();
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    auto t_now = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+    // Changing global color (Uniform) over time
+    // auto t_now = std::chrono::high_resolution_clock::now();
+    // float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
     // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
