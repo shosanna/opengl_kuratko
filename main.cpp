@@ -55,6 +55,67 @@ class ShaderSource {
   }
 };
 
+class ShaderProgram
+{
+public:
+  ShaderSource vertexShaderSource_;
+  ShaderSource fragmentShaderSource_;
+
+  GLuint vertexShader;
+  GLuint fragmentShader;
+  GLuint shaderProgram;
+
+  ShaderProgram(std::string vertex_file, std::string fragment_file_): vertexShaderSource_{vertex_file}, fragmentShaderSource_{fragment_file_}
+  {
+    vertexShader = vertexShaderSource_.compile(GL_VERTEX_SHADER);
+    fragmentShader = fragmentShaderSource_.compile(GL_FRAGMENT_SHADER);
+
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);  
+
+    glLinkProgram(shaderProgram);
+    use();    
+  }
+
+  ShaderProgram(const ShaderProgram&) = delete;
+
+  ~ShaderProgram()
+  {
+    glDeleteProgram(shaderProgram);
+    glDeleteShader(fragmentShader);
+    glDeleteShader(vertexShader);
+  }
+
+  void use()
+  {
+    glUseProgram(shaderProgram);
+  }
+
+  void setupAttributes()
+  {
+    glBindFragDataLocation(shaderProgram, 0, "outColor");
+
+    // Here are 3 attributes - for position, color and texture and a way how to access it from the vertices attributes
+    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), 0);
+    glEnableVertexAttribArray(posAttrib);
+
+    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
+    glEnableVertexAttribArray(colAttrib);
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(2*sizeof(float)));
+
+    GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
+    glEnableVertexAttribArray(texAttrib);
+    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(5*sizeof(float)));
+
+    // UNIFORM = global variable to set a color of a shape globally
+    GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
+    glUniform3f(uniColor, 1.5f, 0.0f, 0.0f);
+  }
+};
+
+
 // This example is taken from http://learnopengl.com/
 // http://learnopengl.com/code_viewer.php?code=getting-started/hellowindow2
 // The code originally used GLEW, I replaced it with Glad
@@ -107,11 +168,11 @@ GLFWwindow* setupGLFW() {
   return window;
 }
 
-void kocicka_at(float x, float y, float size) {
+void kocicka_at(ShaderProgram& program, TGAImage& kocicka, TGAImage& pejsek, float x, float y, float size, float selector) {
   GLuint vertexBuffer;
   glGenBuffers(1, &vertexBuffer);
 
-  float  off = size / 2;
+  float off = size / 2;
   // Position      Color             Texture coords
   float vertices[] = {
     x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
@@ -134,54 +195,36 @@ void kocicka_at(float x, float y, float size) {
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 
-  // Compiling shaders
-  ShaderSource vs("vertex.glsl");
-  GLuint vertexShader = vs.compile(GL_VERTEX_SHADER);
+  program.setupAttributes();
 
-  ShaderSource fs("fragment.glsl");
-  GLuint fragmentShader = fs.compile(GL_FRAGMENT_SHADER);
+  glUniform1i(glGetUniformLocation(program.shaderProgram, "kocicka"), 0);
+  glUniform1i(glGetUniformLocation(program.shaderProgram, "pejsek"), 1);
+  glUniform1f(glGetUniformLocation(program.shaderProgram, "selector"), selector);
 
-  // Combining all shaders together
-  GLuint shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+}
 
-  glBindFragDataLocation(shaderProgram, 0, "outColor");
-  glLinkProgram(shaderProgram);
-  glUseProgram(shaderProgram);
+void game_loop(GLFWwindow* window) {
+  glViewport(0, 0, 2*WIDTH, 2*HEIGHT);
 
-  // Here are 3 attributes - for position, color and texture and a way how to access it from the vertices attributes
-  GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), 0);
-  glEnableVertexAttribArray(posAttrib);
-
-  GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
-  glEnableVertexAttribArray(colAttrib);
-  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(2*sizeof(float)));
-
-  GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
-  glEnableVertexAttribArray(texAttrib);
-  glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(5*sizeof(float)));
-
-  // UNIFORM = global variable to set a color of a shape globally
-  GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
-  glUniform3f(uniColor, 1.5f, 0.0f, 0.0f);
-
-  // Inicializovani indexu TEXTUR
-  GLuint textures[2];
-  glGenTextures(2, textures);
-  glUniform1i(glGetUniformLocation(shaderProgram, "kocicka"), 0);
-  glUniform1i(glGetUniformLocation(shaderProgram, "pejsek"), 1);
-
-  // Prepnuti se na prvni texturu
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, textures[0]);
 
   // PRVNI TEXTURE
   TGAImage kocicka;
   if (!kocicka.read_tga_file("sample.tga")) {
     std::cerr << "Nepovedlo se" << std::endl;
   }
+  TGAImage pejsek;
+  if (!pejsek.read_tga_file("pejsek.tga")) {
+    std::cerr << "Nepovedlo se" << std::endl;
+  }
+
+  // Inicializovani indexu TEXTUR
+  GLuint textures[2];
+  glGenTextures(2, textures);
+
+  // Prepnuti se na prvni texturu
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, kocicka.get_width(), kocicka.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, kocicka.buffer());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -190,15 +233,10 @@ void kocicka_at(float x, float y, float size) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   // DRUHA TEXTURA
-  
+
   // Prepnuti se na prvni texturu
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
-
-  TGAImage pejsek;
-  if (!pejsek.read_tga_file("pejsek.tga")) {
-    std::cerr << "Nepovedlo se" << std::endl;
-  }
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pejsek.get_width(), pejsek.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, pejsek.buffer());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -206,12 +244,7 @@ void kocicka_at(float x, float y, float size) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-}
-
-void game_loop(GLFWwindow* window) {
-  glViewport(0, 0, 2*WIDTH, 2*HEIGHT);
-
+  ShaderProgram program("vertex.glsl", "fragment.glsl");
 
   // auto t_start = std::chrono::high_resolution_clock::now();
   while (!glfwWindowShouldClose(window)) {
@@ -224,13 +257,26 @@ void game_loop(GLFWwindow* window) {
     // auto t_now = std::chrono::high_resolution_clock::now();
     // float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
     // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
-    kocicka_at(0,0, 0.2);
+    //
+
+    for (float i = -1.0f; i <= 1.0f; i += 0.2f) {
+      for (float j = -1.0f; j <= 1.0f; j += 0.2f) {
+        int x = j * WIDTH;
+        int y = i * HEIGHT;
+        kocicka_at(program, kocicka, pejsek, j, i, 0.2, (x + y) % 2);
+      }
+    }
+
     glfwSwapBuffers(window);
   }
 }
+#include "tiled.hpp"
 
 // The MAIN function, from here we start the application and run the game loop
 int main() {
+  auto res = tile_ids("xmlova.tmx");
+
+
   GLFWwindow* window = setupGLFW();
   if (!window) return -1;
 
