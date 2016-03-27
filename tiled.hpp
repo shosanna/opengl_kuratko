@@ -10,6 +10,10 @@
 
 
 
+class Tile {
+
+};
+
 class TileMap {
   public:
     std::vector<Tile> tiles;

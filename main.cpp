@@ -15,6 +15,7 @@
 #include <fstream>
 #include <chrono>
 #include <vector>
+#include "tiled.hpp"
 
 class ShaderSource {
   std::string filename_;
@@ -116,14 +117,6 @@ public:
 };
 
 
-// This example is taken from http://learnopengl.com/
-// http://learnopengl.com/code_viewer.php?code=getting-started/hellowindow2
-// The code originally used GLEW, I replaced it with Glad
-
-// Compile:
-// g++ example/c++/hellowindow2.cpp -Ibuild/include build/src/glad.c -lglfw -ldl
-
-// Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode);
 
@@ -168,7 +161,7 @@ GLFWwindow* setupGLFW() {
   return window;
 }
 
-void kocicka_at(ShaderProgram& program, TGAImage& kocicka, TGAImage& pejsek, float x, float y, float size, float selector) {
+void tile_at(ShaderProgram& program, TGAImage& kocicka, TGAImage& pejsek, float x, float y, float size, float selector) {
   GLuint vertexBuffer;
   glGenBuffers(1, &vertexBuffer);
 
@@ -207,8 +200,7 @@ void kocicka_at(ShaderProgram& program, TGAImage& kocicka, TGAImage& pejsek, flo
 void game_loop(GLFWwindow* window) {
   glViewport(0, 0, 2*WIDTH, 2*HEIGHT);
 
-
-  // PRVNI TEXTURE
+  // Nacteni obrazku
   TGAImage kocicka;
   if (!kocicka.read_tga_file("sample.tga")) {
     std::cerr << "Nepovedlo se" << std::endl;
@@ -218,6 +210,7 @@ void game_loop(GLFWwindow* window) {
     std::cerr << "Nepovedlo se" << std::endl;
   }
 
+  // PRVNI TEXTURE
   // Inicializovani indexu TEXTUR
   GLuint textures[2];
   glGenTextures(2, textures);
@@ -233,8 +226,7 @@ void game_loop(GLFWwindow* window) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   // DRUHA TEXTURA
-
-  // Prepnuti se na prvni texturu
+  // Prepnuti se na druhou texturu
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
 
@@ -257,25 +249,22 @@ void game_loop(GLFWwindow* window) {
     // auto t_now = std::chrono::high_resolution_clock::now();
     // float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
     // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
-    //
 
     for (float i = -1.0f; i <= 1.0f; i += 0.2f) {
       for (float j = -1.0f; j <= 1.0f; j += 0.2f) {
         int x = j * WIDTH;
         int y = i * HEIGHT;
-        kocicka_at(program, kocicka, pejsek, j, i, 0.2, (x + y) % 2);
+        tile_at(program, kocicka, pejsek, j, i, 0.2, (x + y) % 2);
       }
     }
 
     glfwSwapBuffers(window);
   }
 }
-#include "tiled.hpp"
 
 // The MAIN function, from here we start the application and run the game loop
 int main() {
   auto res = tile_ids("xmlova.tmx");
-
 
   GLFWwindow* window = setupGLFW();
   if (!window) return -1;
