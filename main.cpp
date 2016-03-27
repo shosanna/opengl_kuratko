@@ -119,9 +119,9 @@ void game_loop(GLFWwindow* window) {
     0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 
     -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-    0.5f, 0.5f, 0.6f, 0.3f, 0.6f, 1.0f, 0.0f,
-    -0.5f, -0.5f, 0.6f, 0.3f, 0.6f, 0.0f, 1.0f,
-    -0.5f, 0.5f, 0.6f, 0.3f, 0.6, 0.0f, 0.0f,
+    0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+    -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+    -0.5f, 0.5f, 1.0f, 1.0f, 1.0, 0.0f, 0.0f,
   };
 
   // sending vertices to the graphic cards and making it active
@@ -168,26 +168,42 @@ void game_loop(GLFWwindow* window) {
   GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
   glUniform3f(uniColor, 1.5f, 0.0f, 0.0f);
 
-  // TEXTURE
-  GLuint tex; 
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_2D, tex);
+  // Inicializovani indexu TEXTUR
+  GLuint textures[2];
+  glGenTextures(2, textures);
+  glUniform1i(glGetUniformLocation(shaderProgram, "kocicka"), 0);
+  glUniform1i(glGetUniformLocation(shaderProgram, "pejsek"), 1);
 
-  // TEXTURE !!
-  int width, height;
-  TGAImage img;
+  // Prepnuti se na prvni texturu
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-  if (!img.read_tga_file("sample.tga")) {
+  // PRVNI TEXTURE
+  TGAImage kocicka;
+  if (!kocicka.read_tga_file("sample.tga")) {
     std::cerr << "Nepovedlo se" << std::endl;
   }
 
-  width = img.get_width() * 2;
-  height = img.get_height();
-  unsigned char* image = img.buffer();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, kocicka.get_width(), kocicka.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, kocicka.buffer());
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  // DRUHA TEXTURA
+  
+  // Prepnuti se na prvni texturu
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+
+  TGAImage pejsek;
+  if (!pejsek.read_tga_file("pejsek.tga")) {
+    std::cerr << "Nepovedlo se" << std::endl;
+  }
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pejsek.get_width(), pejsek.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, pejsek.buffer());
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
