@@ -107,21 +107,20 @@ GLFWwindow* setupGLFW() {
   return window;
 }
 
-void game_loop(GLFWwindow* window) {
-  glViewport(0, 0, 2*WIDTH, 2*HEIGHT);
-
+void kocicka_at(float x, float y, float size) {
   GLuint vertexBuffer;
   glGenBuffers(1, &vertexBuffer);
 
+  float  off = size / 2;
   // Position      Color             Texture coords
   float vertices[] = {
-    0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-    0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 
-    -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+    x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+    x + off, y - off, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 
+    x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-    0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-    -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-    -0.5f, 0.5f, 1.0f, 1.0f, 1.0, 0.0f, 0.0f,
+    x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+    x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+    x - off, y + off, 1.0f, 1.0f, 1.0, 0.0f, 0.0f,
   };
 
   // sending vertices to the graphic cards and making it active
@@ -207,6 +206,13 @@ void game_loop(GLFWwindow* window) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void game_loop(GLFWwindow* window) {
+  glViewport(0, 0, 2*WIDTH, 2*HEIGHT);
+
+
   // auto t_start = std::chrono::high_resolution_clock::now();
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -218,8 +224,7 @@ void game_loop(GLFWwindow* window) {
     // auto t_now = std::chrono::high_resolution_clock::now();
     // float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
     // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
+    kocicka_at(0,0, 0.2);
     glfwSwapBuffers(window);
   }
 }
