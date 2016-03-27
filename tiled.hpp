@@ -8,11 +8,12 @@
 #include <vector>
 #include <string>
 
+
+
 class TileMap {
   public:
     std::vector<Tile> tiles;
     std::vector<int> map;
-  Tile
 };
 
 std::vector<int> tile_ids(const std::string& filename) {
