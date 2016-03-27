@@ -1,1 +1,4 @@
 bin/
+*.sdf
+*.opensdf
+Debug/
