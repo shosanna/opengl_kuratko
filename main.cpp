@@ -199,6 +199,9 @@ void tile_at(ShaderProgram& program, TGAImage& kocicka, TGAImage& pejsek, float 
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
+int current_x = 0;
+int current_y = 0;
+
 void game_loop(GLFWwindow* window) {
   glViewport(0, 0, 2*WIDTH, 2*HEIGHT);
 
@@ -212,11 +215,11 @@ void game_loop(GLFWwindow* window) {
     std::cerr << "Nepovedlo se" << std::endl;
   }
 
-  // PRVNI TEXTURE
   // Inicializovani indexu TEXTUR
   GLuint textures[2];
   glGenTextures(2, textures);
 
+  // PRVNI TEXTURE
   // Prepnuti se na prvni texturu
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -252,11 +255,18 @@ void game_loop(GLFWwindow* window) {
     // float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
     // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
 
-    for (float i = -1.0f; i <= 1.0f; i += 0.2f) {
-      for (float j = -1.0f; j <= 1.0f; j += 0.2f) {
-        int x = j * WIDTH;
-        int y = i * HEIGHT;
-        tile_at(program, kocicka, pejsek, j, i, 0.2, (x + y) % 2);
+    float tile_size = 0.2f; 
+    int tile_count = 2 / tile_size;
+
+    for (int i = 0; i < tile_count; i++) {
+      for (int j = 0; j < tile_count; j++) {
+        float x = j * tile_size - 1 + tile_size / 2;
+        float y = -(i * tile_size - 1 + tile_size / 2);
+        if (i == current_y && j == current_x) { 
+          tile_at(program, kocicka, pejsek, x, y, tile_size, 0);
+        } else {
+          tile_at(program, kocicka, pejsek, x, y, tile_size, 1);
+        };
       }
     }
 
@@ -278,10 +288,35 @@ int main() {
   return 0;
 }
 
+int clamp(int low, int current, int high) {
+  if (current < low) return low;
+  if (current > high) return high;
+  return current;
+}
+
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode) {
   std::cout << key << std::endl;
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     glfwSetWindowShouldClose(window, GL_TRUE);
+
+  if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+    current_x++;
+  }
+
+  if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+    current_x--;
+  }
+
+  if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+    current_y--;
+  }
+
+  if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+    current_y++;
+  }
+
+  current_y = clamp(0, current_y, 9);
+  current_x = clamp(0, current_x, 9);
 }
