@@ -17,6 +17,8 @@
 #include <vector>
 #include "tiled.hpp"
 
+#include "tiled.hpp"
+
 class ShaderSource {
   std::string filename_;
   std::string contents_;
@@ -264,7 +266,7 @@ void game_loop(GLFWwindow* window) {
 
 // The MAIN function, from here we start the application and run the game loop
 int main() {
-  auto res = tile_ids("xmlova.tmx");
+  auto res = load_tiles("xmlova.tmx");
 
   GLFWwindow* window = setupGLFW();
   if (!window) return -1;
