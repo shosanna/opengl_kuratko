@@ -252,8 +252,6 @@ void game_loop(GLFWwindow* window) {
     // t_start).count();
     // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
 
-    glUniform1i(glGetUniformLocation(program.shaderProgram, "background"), 0);
-    glUniform1i(glGetUniformLocation(program.shaderProgram, "kuratko"), 1);
 
     float tile_size = 0.1f;
     int tile_count = 2 / tile_size;
@@ -263,12 +261,10 @@ void game_loop(GLFWwindow* window) {
         float x = j * tile_size - 1 + tile_size / 2;
         float y = -(i * tile_size - 1 + tile_size / 2);
         if (i == current_y && j == current_x) {
-          glUniform1f(glGetUniformLocation(program.shaderProgram, "selector"),
-                      0);
+          glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 1);
           tile_at(program, background, kuratko, x, y, tile_size);
         } else {
-          glUniform1f(glGetUniformLocation(program.shaderProgram, "selector"),
-                      1);
+          glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 0);
           tile_at(program, background, kuratko, x, y, tile_size);
         };
       }
