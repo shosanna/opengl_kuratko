@@ -1,5 +1,5 @@
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
 // GLAD
 #include <glad/glad.h>
@@ -10,12 +10,11 @@
 // TGA Image
 #include <tgaimage.h>
 
-#include <string>
 #include <stdio.h>
-#include <fstream>
 #include <chrono>
+#include <fstream>
+#include <string>
 #include <vector>
-#include "tiled.hpp"
 
 #include "tiled.hpp"
 
@@ -58,9 +57,8 @@ class ShaderSource {
   }
 };
 
-class ShaderProgram
-{
-public:
+class ShaderProgram {
+ public:
   ShaderSource vertexShaderSource_;
   ShaderSource fragmentShaderSource_;
 
@@ -68,56 +66,59 @@ public:
   GLuint fragmentShader;
   GLuint shaderProgram;
 
-  ShaderProgram(std::string vertex_file, std::string fragment_file_): vertexShaderSource_{vertex_file}, fragmentShaderSource_{fragment_file_}
-  {
+  ShaderProgram(std::string vertex_file, std::string fragment_file_)
+      : vertexShaderSource_{vertex_file},
+        fragmentShaderSource_{fragment_file_} {
     vertexShader = vertexShaderSource_.compile(GL_VERTEX_SHADER);
     fragmentShader = fragmentShaderSource_.compile(GL_FRAGMENT_SHADER);
 
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);  
+    glAttachShader(shaderProgram, fragmentShader);
 
     glLinkProgram(shaderProgram);
-    use();    
+
+    // Vao for caching attributes!
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
   }
 
   ShaderProgram(const ShaderProgram&) = delete;
 
-  ~ShaderProgram()
-  {
+  ~ShaderProgram() {
     glDeleteProgram(shaderProgram);
     glDeleteShader(fragmentShader);
     glDeleteShader(vertexShader);
   }
 
-  void use()
-  {
-    glUseProgram(shaderProgram);
-  }
+  void use() { glUseProgram(shaderProgram); }
 
-  void setupAttributes()
-  {
+  void setupAttributes() {
     glBindFragDataLocation(shaderProgram, 0, "outColor");
 
-    // Here are 3 attributes - for position, color and texture and a way how to access it from the vertices attributes
+    // Here are 3 attributes - for position, color and texture and a way how to
+    // access it from the vertices attributes
     GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), 0);
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                          0);
     glEnableVertexAttribArray(posAttrib);
 
     GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
     glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(2*sizeof(float)));
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                          (void*)(2 * sizeof(float)));
 
     GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
     glEnableVertexAttribArray(texAttrib);
-    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(5*sizeof(float)));
+    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                          (void*)(5 * sizeof(float)));
 
     // UNIFORM = global variable to set a color of a shape globally
     GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
     glUniform3f(uniColor, 1.5f, 0.0f, 0.0f);
   }
 };
-
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode);
@@ -163,38 +164,21 @@ GLFWwindow* setupGLFW() {
   return window;
 }
 
-void tile_at(ShaderProgram& program, TGAImage& kocicka, TGAImage& pejsek, float x, float y, float size, float selector) {
-  GLuint vertexBuffer;
-  glGenBuffers(1, &vertexBuffer);
-
+void tile_at(ShaderProgram& program, TGAImage& background, TGAImage& kuratko,
+             float x, float y, float size) {
   float off = size / 2;
   // Position      Color             Texture coords
   float vertices[] = {
-    x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-    x + off, y - off, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 
-    x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+      x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+      x + off, y - off, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+      x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-    x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-    x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-    x - off, y + off, 1.0f, 1.0f, 1.0, 0.0f, 0.0f,
+      x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+      x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+      x - off, y + off, 1.0f, 1.0f, 1.0,  0.0f, 0.0f,
   };
-
   // sending vertices to the graphic cards and making it active
-  GLuint vbo;
-  glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-  // Vao for caching attributes!
-  GLuint vao;
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
-
-  program.setupAttributes();
-
-  glUniform1i(glGetUniformLocation(program.shaderProgram, "kocicka"), 0);
-  glUniform1i(glGetUniformLocation(program.shaderProgram, "pejsek"), 1);
-  glUniform1f(glGetUniformLocation(program.shaderProgram, "selector"), selector);
 
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
@@ -203,15 +187,15 @@ int current_x = 0;
 int current_y = 0;
 
 void game_loop(GLFWwindow* window) {
-  glViewport(0, 0, 2*WIDTH, 2*HEIGHT);
+  glViewport(0, 0, 2 * WIDTH, 2 * HEIGHT);
 
   // Nacteni obrazku
-  TGAImage kocicka;
-  if (!kocicka.read_tga_file("sample.tga")) {
+  TGAImage background;
+  if (!background.read_tga_file("grass.tga")) {
     std::cerr << "Nepovedlo se" << std::endl;
   }
-  TGAImage pejsek;
-  if (!pejsek.read_tga_file("pejsek.tga")) {
+  TGAImage kuratko;
+  if (!kuratko.read_tga_file("kuratko.tga")) {
     std::cerr << "Nepovedlo se" << std::endl;
   }
 
@@ -224,7 +208,9 @@ void game_loop(GLFWwindow* window) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, kocicka.get_width(), kocicka.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, kocicka.buffer());
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, background.get_width(),
+               background.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE,
+               background.buffer());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -235,13 +221,22 @@ void game_loop(GLFWwindow* window) {
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pejsek.get_width(), pejsek.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, pejsek.buffer());
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, kuratko.get_width(),
+               kuratko.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE,
+               kuratko.buffer());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   ShaderProgram program("vertex.glsl", "fragment.glsl");
+
+  GLuint vbo;
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+  program.use();
+  program.setupAttributes();
 
   // auto t_start = std::chrono::high_resolution_clock::now();
   while (!glfwWindowShouldClose(window)) {
@@ -252,20 +247,29 @@ void game_loop(GLFWwindow* window) {
 
     // Changing global color (Uniform) over time
     // auto t_now = std::chrono::high_resolution_clock::now();
-    // float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+    // float time =
+    // std::chrono::duration_cast<std::chrono::duration<float>>(t_now -
+    // t_start).count();
     // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
 
-    float tile_size = 0.2f; 
+    glUniform1i(glGetUniformLocation(program.shaderProgram, "background"), 0);
+    glUniform1i(glGetUniformLocation(program.shaderProgram, "kuratko"), 1);
+
+    float tile_size = 0.1f;
     int tile_count = 2 / tile_size;
 
     for (int i = 0; i < tile_count; i++) {
       for (int j = 0; j < tile_count; j++) {
         float x = j * tile_size - 1 + tile_size / 2;
         float y = -(i * tile_size - 1 + tile_size / 2);
-        if (i == current_y && j == current_x) { 
-          tile_at(program, kocicka, pejsek, x, y, tile_size, 0);
+        if (i == current_y && j == current_x) {
+          glUniform1f(glGetUniformLocation(program.shaderProgram, "selector"),
+                      0);
+          tile_at(program, background, kuratko, x, y, tile_size);
         } else {
-          tile_at(program, kocicka, pejsek, x, y, tile_size, 1);
+          glUniform1f(glGetUniformLocation(program.shaderProgram, "selector"),
+                      1);
+          tile_at(program, background, kuratko, x, y, tile_size);
         };
       }
     }
@@ -297,7 +301,6 @@ int clamp(int low, int current, int high) {
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode) {
-  std::cout << key << std::endl;
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     glfwSetWindowShouldClose(window, GL_TRUE);
 
@@ -317,6 +320,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action,
     current_y++;
   }
 
-  current_y = clamp(0, current_y, 9);
-  current_x = clamp(0, current_x, 9);
+  current_y = clamp(0, current_y, 19);
+  current_x = clamp(0, current_x, 19);
 }

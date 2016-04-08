@@ -5,13 +5,13 @@ out vec4 outColor;
 in vec3 Color;
 in vec2 Texcoord;
 
-uniform sampler2D pejsek;
-uniform sampler2D kocicka;
+uniform sampler2D kuratko;
+uniform sampler2D background;
 uniform float selector;
 
 void main()
 {
-  vec4 haf = texture(pejsek, Texcoord);
-  vec4 mnau = texture(kocicka, Texcoord);
-  outColor = mix(haf, mnau, selector) * vec4(Color, 0.1);
+  vec4 k = texture(kuratko, Texcoord);
+  vec4 bg = texture(background, Texcoord);
+  outColor = mix(k, bg, selector) * vec4(Color, 0.1);
 }
