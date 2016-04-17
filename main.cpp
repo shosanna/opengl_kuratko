@@ -113,22 +113,11 @@ class ShaderProgram {
     glEnableVertexAttribArray(colAttrib);
     glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, vert_data_size,
                           (void*)(2 * sizeof(float)));
-
-    // UNIFORM = global variable to set a color of a shape globally
-    GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
-    glUniform3f(uniColor, 1.5f, 0.0f, 0.0f);
   }
 };
 
-// void key_callback(GLFWwindow* window, int key, int scancode, int action,
-// int mode);
-
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
-
-// void error_callback(int error, const char* description) {
-//   std::cout << description << std::endl;
-// }
 
 SDL_Window* setupSDL() {
   SDL_Init(SDL_INIT_VIDEO);
@@ -158,40 +147,6 @@ SDL_Window* setupSDL() {
 
   return window;
 }
-
-// GLFWwindow* setupGLFW() {
-// std::cout << "Starting GLFW context, OpenGL 3.2" << std::endl;
-// // Init GLFW
-// glfwInit();
-// // Set all the required options for GLFW
-// glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-// glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-// glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-// glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-//
-// glfwSetErrorCallback(error_callback);
-//
-// // Create a GLFWwindow object that we can use for GLFW's functions
-// GLFWwindow* window =
-//     glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", NULL, NULL);
-// if (window == nullptr) {
-//   std::cout << "Failed to create GLFW window" << std::endl;
-//   glfwTerminate();
-//   return nullptr;
-// }
-//
-// glfwMakeContextCurrent(window);
-//
-// glfwSetKeyCallback(window, key_callback);
-//
-// if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-//   std::cout << "Failed to initialize OpenGL context" << std::endl;
-//   return nullptr;
-// }
-//
-// return window;
-// }
 
 void tile_at(float x, float y, float size, float r, float g, float b) {
 
@@ -250,13 +205,15 @@ void game_loop(SDL_Window* window) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    float tile_size = 0.1f;
+    float tile_size = 0.2f;
     int tile_count = 2 / tile_size;
+
 
     for (int i = 0; i < tile_count; i++) {
       for (int j = 0; j < tile_count; j++) {
         float x = j * tile_size - 1 + tile_size / 2;
         float y = -(i * tile_size - 1 + tile_size / 2);
+
         if (i == current_y && j == current_x) {
           tile_at(x, y, tile_size, 1.0f, 0.0f, 0.0f);
         } else {
@@ -264,7 +221,6 @@ void game_loop(SDL_Window* window) {
         };
       }
     }
-
     SDL_GL_SwapWindow(window);
   }
 }
