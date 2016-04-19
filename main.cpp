@@ -10,6 +10,9 @@
 // TGA Image
 #include <tgaimage.h>
 
+// PNG image
+#include <lodepng.h>
+
 #include <stdio.h>
 #include <chrono>
 #include <fstream>
@@ -189,6 +192,10 @@ int current_y = 0;
 void game_loop(GLFWwindow* window) {
   glViewport(0, 0, 2 * WIDTH, 2 * HEIGHT);
 
+  glEnable(GL_BLEND);
+  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
   // Nacteni obrazku
   TGAImage background;
   if (!background.read_tga_file("grass.tga")) {
@@ -198,6 +205,10 @@ void game_loop(GLFWwindow* window) {
   if (!kuratko.read_tga_file("kuratko.tga")) {
     std::cerr << "Nepovedlo se" << std::endl;
   }
+
+  std::vector<unsigned char> image;
+  unsigned width, height;
+  lodepng::decode(image, width, height, "kuratko.png");
 
   // Inicializovani indexu TEXTUR
   GLuint textures[2];
@@ -221,9 +232,9 @@ void game_loop(GLFWwindow* window) {
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, kuratko.get_width(),
-               kuratko.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE,
-               kuratko.buffer());
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
+               height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               image.data());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
