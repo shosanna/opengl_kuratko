@@ -167,8 +167,7 @@ GLFWwindow* setupGLFW() {
   return window;
 }
 
-void tile_at(ShaderProgram& program, TGAImage& background, TGAImage& kuratko,
-             float x, float y, float size) {
+void tile_at(float x, float y, float size) {
   float off = size / 2;
   // Position      Color             Texture coords
   float vertices[] = {
@@ -192,23 +191,15 @@ int current_y = 0;
 void game_loop(GLFWwindow* window) {
   glViewport(0, 0, 2 * WIDTH, 2 * HEIGHT);
 
-  glEnable(GL_BLEND);
-  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-
   // Nacteni obrazku
-  TGAImage background;
-  if (!background.read_tga_file("grass.tga")) {
-    std::cerr << "Nepovedlo se" << std::endl;
-  }
-  TGAImage kuratko;
-  if (!kuratko.read_tga_file("kuratko.tga")) {
-    std::cerr << "Nepovedlo se" << std::endl;
-  }
+
+  std::vector<unsigned char> background;
+  unsigned width, height;
+  lodepng::decode(background, width, height, "grass.png");
 
   std::vector<unsigned char> image;
-  unsigned width, height;
-  lodepng::decode(image, width, height, "kuratko.png");
+  unsigned width2, height2;
+  lodepng::decode(image, width2, height2, "kuratko.png");
 
   // Inicializovani indexu TEXTUR
   GLuint textures[2];
@@ -219,9 +210,8 @@ void game_loop(GLFWwindow* window) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, background.get_width(),
-               background.get_height(), 0, GL_BGRA, GL_UNSIGNED_BYTE,
-               background.buffer());
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               background.data());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -229,11 +219,15 @@ void game_loop(GLFWwindow* window) {
 
   // DRUHA TEXTURA
   // Prepnuti se na druhou texturu
+
+  // glEnable(GL_BLEND);
+  // glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
-               height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width2,
+               height2, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                image.data());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -256,14 +250,6 @@ void game_loop(GLFWwindow* window) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Changing global color (Uniform) over time
-    // auto t_now = std::chrono::high_resolution_clock::now();
-    // float time =
-    // std::chrono::duration_cast<std::chrono::duration<float>>(t_now -
-    // t_start).count();
-    // glUniform3f(uniColor, (std::sin(time*4.0f) + 1.0f) / 2.0f, 0.3f, 0.87f);
-
-
     float tile_size = 0.1f;
     int tile_count = 2 / tile_size;
 
@@ -273,10 +259,10 @@ void game_loop(GLFWwindow* window) {
         float y = -(i * tile_size - 1 + tile_size / 2);
         if (i == current_y && j == current_x) {
           glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 1);
-          tile_at(program, background, kuratko, x, y, tile_size);
+          tile_at(x, y, tile_size);
         } else {
           glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 0);
-          tile_at(program, background, kuratko, x, y, tile_size);
+          tile_at(x, y, tile_size);
         };
       }
     }
