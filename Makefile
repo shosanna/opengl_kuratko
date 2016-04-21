@@ -1,8 +1,28 @@
-CXXFLAGS=-O0 -g -std=c++14
-INCLUDE=-Iinclude -I/usr/local/include
-LIBS=-L/usr/local/lib -lglfw3 -ldl
-SRC=src/*.c src/*.cpp
+APPNAME   := bin/main
+SOURCES		:= $(wildcard src/*.cpp src/*.c)
+OBJECTS 	:= $(patsubst src%, obj%, $(patsubst %.cpp, %.o, $(patsubst %.c, %.o, $(SOURCES))))
 
-default:
-	clang++ main.cpp $(CXXFLAGS) $(SRC) $(INCLUDE) $(LIBS) -o bin/main
+INCLUDE   := -I./include -I/usr/local/include
+LIBPATH		:= -L/usr/local/lib
+LIBS			:= -lglfw3 -ldl
+
+FLAGS			:= -O0 -g -fno-strict-aliasing
+CCFLAGS 	:= $(FLAGS)
+CXXFLAGS  := $(FLAGS) -std=c++14
+
+CC        := clang
+CXX       := clang++
+
+all: $(OBJECTS)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(OBJECTS) -o $(APPNAME) $(LIBPATH) $(LIBS)
 	./bin/main
+
+obj/%.o: src/%.c
+	$(CC) $(CCFLAGS) $(INCLUDE) -c $< -o $@
+
+obj/%.o: src/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
+
+clean:
+	rm -rf obj/*
+	rm -f $(APPNAME)

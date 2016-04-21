@@ -13,11 +13,16 @@
 // PNG image
 #include <lodepng.h>
 
+// IMGUI
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+
 #include <stdio.h>
 #include <chrono>
 #include <fstream>
 #include <string>
 #include <vector>
+#include <stopwatch.hpp>
 
 #include "tiled.hpp"
 
@@ -167,10 +172,10 @@ GLFWwindow* setupGLFW() {
   return window;
 }
 
-void tile_at(float x, float y, float size) {
+void tile_at(std::vector<float>& vbo_data, float x, float y, float size) {
   float off = size / 2;
   // Position      Color             Texture coords
-  float vertices[] = {
+  std::vector<float> vertices{
       x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
       x + off, y - off, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
       x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
@@ -179,16 +184,26 @@ void tile_at(float x, float y, float size) {
       x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
       x - off, y + off, 1.0f, 1.0f, 1.0,  0.0f, 0.0f,
   };
-  // sending vertices to the graphic cards and making it active
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  glDrawArrays(GL_TRIANGLES, 0, 6);
+  for (float v : vertices) {
+    vbo_data.push_back(v);
+  }
 }
 
 int current_x = 0;
 int current_y = 0;
 
+void draw_vector_triangles(const std::vector<float>& vbo_data) {
+    // sending vertices to the graphic cards and making it active
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vbo_data.size(),
+                 vbo_data.data(), GL_STATIC_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, vbo_data.size());
+}
+
 void game_loop(GLFWwindow* window) {
+  // Setup ImGui binding
+  ImGui_ImplGlfwGL3_Init(window, true);
+
   glViewport(0, 0, 2 * WIDTH, 2 * HEIGHT);
 
   // Nacteni obrazku
@@ -210,8 +225,8 @@ void game_loop(GLFWwindow* window) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-               background.data());
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+               GL_UNSIGNED_BYTE, background.data());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -220,15 +235,14 @@ void game_loop(GLFWwindow* window) {
   // DRUHA TEXTURA
   // Prepnuti se na druhou texturu
 
-  // glEnable(GL_BLEND);
-  // glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//
+  glEnable(GL_BLEND);
+  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  //
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width2,
-               height2, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-               image.data());
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width2, height2, 0, GL_RGBA,
+               GL_UNSIGNED_BYTE, image.data());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -243,30 +257,47 @@ void game_loop(GLFWwindow* window) {
   program.use();
   program.setupAttributes();
 
+  float tile_size = 0.1f;
+  int tile_count = 2 / tile_size;
+  std::vector<float> background_data;
+
+  for (int i = 0; i < tile_count; i++) {
+    for (int j = 0; j < tile_count; j++) {
+      float x = j * tile_size - 1 + tile_size / 2;
+      float y = -(i * tile_size - 1 + tile_size / 2);
+      tile_at(background_data, x, y, tile_size);
+    }
+  }
+
+  Stopwatch st;
+
   // auto t_start = std::chrono::high_resolution_clock::now();
   while (!glfwWindowShouldClose(window)) {
+    st.start();
+    ImGui_ImplGlfwGL3_NewFrame();
+
     glfwPollEvents();
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    float tile_size = 0.1f;
-    int tile_count = 2 / tile_size;
+    glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 0);
 
-    for (int i = 0; i < tile_count; i++) {
-      for (int j = 0; j < tile_count; j++) {
-        float x = j * tile_size - 1 + tile_size / 2;
-        float y = -(i * tile_size - 1 + tile_size / 2);
-        if (i == current_y && j == current_x) {
-          glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 1);
-          tile_at(x, y, tile_size);
-        } else {
-          glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 0);
-          tile_at(x, y, tile_size);
-        };
-      }
+    draw_vector_triangles(background_data);
+
+    std::vector<float> vbo_data;
+    {
+      float x = current_x * tile_size - 1 + tile_size / 2;
+      float y = -(current_y * tile_size - 1 + tile_size / 2);
+      glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 1);
+      tile_at(vbo_data, x, y, tile_size);
     }
 
+    draw_vector_triangles(vbo_data);
+
+    std::cout << "frame " << st.ms_float() << "ms" << std::endl;
+    ImGui::Text("Hello");
+    ImGui::Render();
     glfwSwapBuffers(window);
   }
 }
