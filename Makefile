@@ -4,7 +4,7 @@ OBJECTS 	:= $(patsubst src%, obj%, $(patsubst %.cpp, %.o, $(patsubst %.c, %.o, $
 
 INCLUDE   := -I./include -I/usr/local/include
 LIBPATH		:= -L/usr/local/lib
-LIBS			:= -lglfw3 -ldl
+LIBS			:= -lsdl2
 
 FLAGS			:= -O0 -g -fno-strict-aliasing
 CCFLAGS 	:= $(FLAGS)

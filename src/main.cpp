@@ -4,8 +4,8 @@
 // GLAD
 #include <glad/glad.h>
 
-// GLFW
-#include <GLFW/glfw3.h>
+// SDL
+#include <SDL/SDL.h>
 
 // TGA Image
 #include <tgaimage.h>
@@ -15,14 +15,14 @@
 
 // IMGUI
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
+#include <imgui_impl_sdl.h>
 
 #include <stdio.h>
 #include <chrono>
 #include <fstream>
+#include <stopwatch.hpp>
 #include <string>
 #include <vector>
-#include <stopwatch.hpp>
 
 #include "tiled.hpp"
 
@@ -128,44 +128,24 @@ class ShaderProgram {
   }
 };
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action,
-                  int mode);
-
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
 
-void error_callback(int error, const char* description) {
-  std::cout << description << std::endl;
-}
+SDL_Window* setupSDL() {
+  std::cout << "Starting SDL context, OpenGL 3.2" << std::endl;
+  // Init SDL
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
-GLFWwindow* setupGLFW() {
-  std::cout << "Starting GLFW context, OpenGL 3.2" << std::endl;
-  // Init GLFW
-  glfwInit();
-  // Set all the required options for GLFW
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-  glfwSetErrorCallback(error_callback);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+  // Set all the required options for SDL
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 
   // Create a GLFWwindow object that we can use for GLFW's functions
-  GLFWwindow* window =
-      glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", NULL, NULL);
+  SDL_Window* window = SDL_CreateWindow("Kuratko Nufik", 200, 200, WIDTH,
+                                        HEIGHT, SDL_WINDOW_OPENGL);
   if (window == nullptr) {
     std::cout << "Failed to create GLFW window" << std::endl;
-    glfwTerminate();
-    return nullptr;
-  }
-
-  glfwMakeContextCurrent(window);
-
-  glfwSetKeyCallback(window, key_callback);
-
-  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    std::cout << "Failed to initialize OpenGL context" << std::endl;
     return nullptr;
   }
 
@@ -194,15 +174,15 @@ int current_x = 0;
 int current_y = 0;
 
 void draw_vector_triangles(const std::vector<float>& vbo_data) {
-    // sending vertices to the graphic cards and making it active
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vbo_data.size(),
-                 vbo_data.data(), GL_STATIC_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, vbo_data.size());
+  // sending vertices to the graphic cards and making it active
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vbo_data.size(),
+               vbo_data.data(), GL_STATIC_DRAW);
+  glDrawArrays(GL_TRIANGLES, 0, vbo_data.size());
 }
 
-void game_loop(GLFWwindow* window) {
+void game_loop(SDL_Window* window) {
   // Setup ImGui binding
-  ImGui_ImplGlfwGL3_Init(window, true);
+  ImGui_ImplSdlGL3_Init(window);
 
   glViewport(0, 0, 2 * WIDTH, 2 * HEIGHT);
 
@@ -236,8 +216,8 @@ void game_loop(GLFWwindow* window) {
   // Prepnuti se na druhou texturu
 
   glEnable(GL_BLEND);
-  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  //
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
 
@@ -271,34 +251,44 @@ void game_loop(GLFWwindow* window) {
 
   Stopwatch st;
 
-  // auto t_start = std::chrono::high_resolution_clock::now();
-  while (!glfwWindowShouldClose(window)) {
-    st.start();
-    ImGui_ImplGlfwGL3_NewFrame();
+  SDL_Event event;
 
-    glfwPollEvents();
+  GLint u_activeTex = glGetUniformLocation(program.shaderProgram, "activeTex");
+  while (true) {
+    st.start();
+    ImGui_ImplSdlGL3_NewFrame(window);
+
+    while (SDL_PollEvent(&event)) {
+      if (event.type == SDL_QUIT || (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE)) {
+        return;
+      }
+      ImGui_ImplSdlGL3_ProcessEvent(&event);
+    }
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 0);
-
+    glUniform1i(u_activeTex, 0);
     draw_vector_triangles(background_data);
 
     std::vector<float> vbo_data;
     {
       float x = current_x * tile_size - 1 + tile_size / 2;
       float y = -(current_y * tile_size - 1 + tile_size / 2);
-      glUniform1i(glGetUniformLocation(program.shaderProgram, "activeTex"), 1);
+      glUniform1i(u_activeTex, 1);
       tile_at(vbo_data, x, y, tile_size);
     }
 
     draw_vector_triangles(vbo_data);
 
-    std::cout << "frame " << st.ms_float() << "ms" << std::endl;
-    ImGui::Text("Hello");
+    // ImGui::Begin("he");
+    // ImGui::Text("Hello");
+    // ImGui::End();
+
     ImGui::Render();
-    glfwSwapBuffers(window);
+
+    // std::cout << "frame " << st.ms_float() << "ms" << std::endl;
+    SDL_GL_SwapWindow(window);
   }
 }
 
@@ -306,13 +296,21 @@ void game_loop(GLFWwindow* window) {
 int main() {
   auto res = load_tiles("xmlova.tmx");
 
-  GLFWwindow* window = setupGLFW();
+  SDL_Window* window = setupSDL();
   if (!window) return -1;
+
+  SDL_GLContext context = SDL_GL_CreateContext(window);
+  if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+    std::cout << "Failed to initialize OpenGL context" << std::endl;
+    return 1;
+  }
 
   game_loop(window);
 
-  // Terminates GLFW, clearing any resources allocated by GLFW.
-  glfwTerminate();
+  SDL_GL_DeleteContext(context);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+
   return 0;
 }
 
@@ -322,28 +320,28 @@ int clamp(int low, int current, int high) {
   return current;
 }
 
-// Is called whenever a key is pressed/released via GLFW
-void key_callback(GLFWwindow* window, int key, int scancode, int action,
-                  int mode) {
-  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    glfwSetWindowShouldClose(window, GL_TRUE);
-
-  if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
-    current_x++;
-  }
-
-  if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
-    current_x--;
-  }
-
-  if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
-    current_y--;
-  }
-
-  if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
-    current_y++;
-  }
-
-  current_y = clamp(0, current_y, 19);
-  current_x = clamp(0, current_x, 19);
-}
+// // Is called whenever a key is pressed/released via GLFW
+// void key_callback(SDL_Window* window, int key, int scancode, int action,
+//                   int mode) {
+//   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+//     glfwSetWindowShouldClose(window, GL_TRUE);
+//
+//   if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+//     current_x++;
+//   }
+//
+//   if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+//     current_x--;
+//   }
+//
+//   if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+//     current_y--;
+//   }
+//
+//   if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+//     current_y++;
+//   }
+//
+//   current_y = clamp(0, current_y, 19);
+//   current_x = clamp(0, current_x, 19);
+// }
