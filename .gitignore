@@ -3,3 +3,6 @@ bin/
 *.opensdf
 Debug/
 *.o
+/x64/Release
+*.opendb
+*.user

@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "tiled.hpp"
+//#include "tiled.hpp"
 
 class ShaderSource {
   std::string filename_;
@@ -293,8 +293,8 @@ void game_loop(SDL_Window* window) {
 }
 
 // The MAIN function, from here we start the application and run the game loop
-int main() {
-  auto res = load_tiles("xmlova.tmx");
+int main(int, char**) {
+  //auto res = load_tiles("xmlova.tmx");
 
   SDL_Window* window = setupSDL();
   if (!window) return -1;
