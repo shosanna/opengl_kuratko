@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <format.h>
 
 // GLAD
 #include <glad/glad.h>
@@ -132,14 +133,14 @@ class ShaderProgram {
 const GLuint WIDTH = 800, HEIGHT = 600;
 
 SDL_Window* setupSDL() {
-  std::cout << "Starting SDL context, OpenGL 3.2" << std::endl;
+  std::cout << "Starting SDL context, OpenGL 4.1" << std::endl;
   // Init SDL
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   // Set all the required options for SDL
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
   // Create a GLFWwindow object that we can use for GLFW's functions
   SDL_Window* window = SDL_CreateWindow("Kuratko Nufik", 200, 200, WIDTH,
@@ -154,6 +155,7 @@ SDL_Window* setupSDL() {
 
 void tile_at(std::vector<float>& vbo_data, float x, float y, float size) {
   float off = size / 2;
+
   // Position      Color             Texture coords
   std::vector<float> vertices{
       x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
@@ -184,10 +186,9 @@ void game_loop(SDL_Window* window) {
   // Setup ImGui binding
   ImGui_ImplSdlGL3_Init(window);
 
-  glViewport(0, 0, 2 * WIDTH, 2 * HEIGHT);
+  glViewport(0, 0, WIDTH, HEIGHT);
 
   // Nacteni obrazku
-
   std::vector<unsigned char> background;
   unsigned width, height;
   lodepng::decode(background, width, height, "grass.png");
@@ -195,6 +196,9 @@ void game_loop(SDL_Window* window) {
   std::vector<unsigned char> image;
   unsigned width2, height2;
   lodepng::decode(image, width2, height2, "kuratko.png");
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Inicializovani indexu TEXTUR
   GLuint textures[2];
@@ -215,9 +219,6 @@ void game_loop(SDL_Window* window) {
   // DRUHA TEXTURA
   // Prepnuti se na druhou texturu
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
 
@@ -227,6 +228,8 @@ void game_loop(SDL_Window* window) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glActiveTexture(GL_TEXTURE0);
 
   ShaderProgram program("vertex.glsl", "fragment.glsl");
 
@@ -249,11 +252,17 @@ void game_loop(SDL_Window* window) {
     }
   }
 
+  tile_at(background_data, 0, 0, tile_size);
+
   Stopwatch st;
 
   SDL_Event event;
 
   GLint u_activeTex = glGetUniformLocation(program.shaderProgram, "activeTex");
+  if (u_activeTex == -1) {
+	  std::cerr << "Chyba activeTEx" << std::endl;
+  }
+
   while (true) {
     st.start();
     ImGui_ImplSdlGL3_NewFrame(window);
@@ -262,6 +271,16 @@ void game_loop(SDL_Window* window) {
       if (event.type == SDL_QUIT || (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE)) {
         return;
       }
+
+	  if (event.type == SDL_KEYDOWN) {
+		switch (event.key.keysym.sym) {
+		case 'w': current_y++; break;
+		case 's': current_y--; break;
+		case 'a': current_x--; break;
+		case 'd': current_x++; break;
+		}
+	  }
+
       ImGui_ImplSdlGL3_ProcessEvent(&event);
     }
 
@@ -272,20 +291,24 @@ void game_loop(SDL_Window* window) {
     draw_vector_triangles(background_data);
 
     std::vector<float> vbo_data;
+
     {
-      float x = current_x * tile_size - 1 + tile_size / 2;
-      float y = -(current_y * tile_size - 1 + tile_size / 2);
+	  float x = current_x * tile_size;
+	  float y = current_y * tile_size;
+
+	  //fmt::print("player ({}, {}) coords ({}, {})\n", current_x, current_y, x, y);
+
       glUniform1i(u_activeTex, 1);
       tile_at(vbo_data, x, y, tile_size);
     }
 
-    draw_vector_triangles(vbo_data);
+	draw_vector_triangles(vbo_data);
 
-    // ImGui::Begin("he");
-    // ImGui::Text("Hello");
-    // ImGui::End();
+	ImGui::Begin("he");
+	ImGui::Text("Hello");
+	ImGui::End();
 
-    ImGui::Render();
+	ImGui::Render();
 
     // std::cout << "frame " << st.ms_float() << "ms" << std::endl;
     SDL_GL_SwapWindow(window);
@@ -320,28 +343,3 @@ int clamp(int low, int current, int high) {
   return current;
 }
 
-// // Is called whenever a key is pressed/released via GLFW
-// void key_callback(SDL_Window* window, int key, int scancode, int action,
-//                   int mode) {
-//   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-//     glfwSetWindowShouldClose(window, GL_TRUE);
-//
-//   if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
-//     current_x++;
-//   }
-//
-//   if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
-//     current_x--;
-//   }
-//
-//   if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
-//     current_y--;
-//   }
-//
-//   if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
-//     current_y++;
-//   }
-//
-//   current_y = clamp(0, current_y, 19);
-//   current_x = clamp(0, current_x, 19);
-// }

@@ -135,6 +135,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\format.cpp" />
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
@@ -145,6 +146,7 @@
     <ClCompile Include="src\tgaimage.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\format.h" />
     <ClInclude Include="include\glad\glad.h" />
     <ClInclude Include="include\khr\khrplatform.h" />
     <ClInclude Include="include\tgaimage.h" />
