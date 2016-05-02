@@ -124,8 +124,6 @@ void game_loop(SDL_Window* window) {
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-  glBindFragDataLocation(shader.program, 0, "outColor");
-
   // Here are 3 attributes - for position, color and texture and a way how to
   // access it from the vertices attributes
   GLint posAttrib = glGetAttribLocation(shader.program, "position");
@@ -141,10 +139,6 @@ void game_loop(SDL_Window* window) {
   glEnableVertexAttribArray(texAttrib);
   glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
                         (void*)(5 * sizeof(float)));
-
-  // UNIFORM = global variable to set a color of a shape globally
-  GLint uniColor = glGetUniformLocation(shader.program, "triangleColor");
-  glUniform3f(uniColor, 1.5f, 0.0f, 0.0f);
 
   float tile_size = 0.1f;
   int tile_count = 2 / tile_size;
@@ -185,7 +179,6 @@ void game_loop(SDL_Window* window) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUniform1i(u_activeTex, 0);
-    draw_vector_triangles(background_data);
 
     std::vector<float> vbo_data;
 
