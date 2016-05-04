@@ -26,7 +26,7 @@
 #include <vector>
 
 //#include "tiled.hpp"
-#include <shader.hpp>
+#include <gl_utils.hpp>
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
@@ -101,6 +101,8 @@ void prepareTex(GLuint texid, std::string filename, int unit) {
 }
 
 void game_loop(SDL_Window* window) {
+  using namespace gl;
+
   // Setup ImGui binding
   ImGui_ImplSdlGL3_Init(window);
 
