@@ -20,7 +20,7 @@ GLuint load_and_compile_shader_(const GLchar* path, GLenum shaderType) {
 	str << file.rdbuf();
 
 	string code = str.str();
-	//cout << code << endl << endl;
+	// cout << code << endl << endl;
 	const GLchar* code_c = code.c_str();
 
 	GLint success;
@@ -136,7 +136,7 @@ namespace gl
 		glBindTexture(GL_TEXTURE_2D, id);
 	}
 
-	Shader::Shader(std::string name): Shader(name + "vs.glsl", name + "fs.glsl") { }
+	Shader::Shader(std::string name): Shader(name + ".vs.glsl", name + ".fs.glsl") { }
 
 	Shader::Shader(std::string vertexPath, std::string fragmentPath) {
 		using namespace std;

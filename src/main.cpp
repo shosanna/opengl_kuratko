@@ -81,82 +81,41 @@ void draw_vector_triangles(const std::vector<float>& vbo_data) {
   glDrawArrays(GL_TRIANGLES, 0, vbo_data.size());
 }
 
-void prepareTex(GLuint texid, std::string filename, int unit) {
-  // Nacteni obrazku
-  std::vector<unsigned char> background;
-  unsigned width, height;
-  lodepng::decode(background, width, height, filename);
-
-  // PRVNI TEXTURE
-  // Prepnuti se na prvni texturu
-  glActiveTexture(GL_TEXTURE0 + unit);
-  glBindTexture(GL_TEXTURE_2D, texid);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, background.data());
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-}
-
 void game_loop(SDL_Window* window) {
   using namespace gl;
+  using namespace glm;
 
   // Setup ImGui binding
   ImGui_ImplSdlGL3_Init(window);
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   glViewport(0, 0, WIDTH, HEIGHT);
 
-  GLuint vao;
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
+  VAO vao;
+  VBO vbo;
 
   // Inicializovani indexu TEXTUR
   GLuint textures[2];
   glGenTextures(2, textures);
 
-  prepareTex(textures[0], "grass.png", 0);
-  prepareTex(textures[1], "kuratko.png", 1);
+  Texture2D t1;
+  t1.load_png("grass.png");
 
-  Shader shader("vertex.glsl", "fragment.glsl");
-  shader.use();
-
-  GLuint vbo;
-  glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-  // Here are 3 attributes - for position, color and texture and a way how to
-  // access it from the vertices attributes
-  GLint posAttrib = glGetAttribLocation(shader.program, "position");
-  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), 0);
-  glEnableVertexAttribArray(posAttrib);
-
-  GLint colAttrib = glGetAttribLocation(shader.program, "color");
-  glEnableVertexAttribArray(colAttrib);
-  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
-                        (void*)(2 * sizeof(float)));
-
-  GLint texAttrib = glGetAttribLocation(shader.program, "texcoord");
-  glEnableVertexAttribArray(texAttrib);
-  glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
-                        (void*)(5 * sizeof(float)));
-
-  float tile_size = 0.1f;
-  int tile_count = 2 / tile_size;
-  std::vector<float> background_data;
-
-  Stopwatch st;
+  Texture2D t2;
+  t2.image_format = GL_RGBA;
+  t2.internal_format = GL_RGBA;
+  t2.load_png("kuratko.png");
 
   SDL_Event event;
-  GLint u_activeTex = glGetUniformLocation(shader.program, "activeTex");
 
-  if (u_activeTex == -1) {
-    std::cerr << "Chyba activeTEx" << std::endl;
-  }
+  Shader spriteShader("res/sprite");
+  SpriteRenderer sprite(spriteShader);
+
+  spriteShader.set("projection", ortho(0.0f, (float)WIDTH, (float)HEIGHT, 0.0f, -1.0f, 1.0f));
 
   while (true) {
-    st.start();
     ImGui_ImplSdlGL3_NewFrame(window);
 
     while (SDL_PollEvent(&event)) {
@@ -167,8 +126,8 @@ void game_loop(SDL_Window* window) {
 
       if (event.type == SDL_KEYDOWN) {
         switch (event.key.keysym.sym) {
-          case 'w': current_y++; break;
-          case 's': current_y--; break;
+          case 'w': current_y--; break;
+          case 's': current_y++; break;
           case 'a': current_x--; break;
           case 'd': current_x++; break;
         }
@@ -180,19 +139,8 @@ void game_loop(SDL_Window* window) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUniform1i(u_activeTex, 0);
-
-    std::vector<float> vbo_data;
-
-    // KURATKO
-    {
-      float x = current_x * tile_size;
-      float y = current_y * tile_size;
-      glUniform1i(u_activeTex, 1);
-      tile_at(vbo_data, x, y, tile_size);
-    }
-
-    draw_vector_triangles(vbo_data);
+    int tile_size = 10;
+    sprite.draw_sprite(t2, vec2(current_x * tile_size, current_y * tile_size), vec2(32, 32));
 
     ImGui::Begin("he");
     ImGui::Text("Hello");
