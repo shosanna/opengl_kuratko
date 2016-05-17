@@ -87,6 +87,8 @@ void game_loop(SDL_Window* window) {
 	using namespace gl;
 	using namespace glm;
 
+	int storyProgress = 0;
+
 	// Setup ImGui binding
 	ImGui_ImplSdlGL3_Init(window);
 
@@ -170,10 +172,27 @@ void game_loop(SDL_Window* window) {
 
 		sprite.draw_sprite(t1, vec2(current_x * tile_size, current_y * tile_size));
 
+		if (storyProgress == 0) {
+			ImGui::Begin("Kuratko Nufik - Kapitola 1");
+			ImGui::TextWrapped("Kuratko Nufik zilo ve zviratkovem lese spolu se svou maminkou na vysokem strome. Jednoho dne, kdyz maminka odesla sbirat sisticky k papiku se kuratko naklanelo z okraje hnizda, aby videlo svet kolem a ... co se nestalo! Kuratko spadlo!");
+			ImGui::TextWrapped("");
+			ImGui::TextWrapped("Kuratko zuchlo na zadecek, nastesti do vysoke travy a nic se mu nestalo. Kuratko bylo z toho cele vyjukane a zacalo se rozhlizet po okoli. Udelalo par kroku sem, par tam a najednou dostalo strach.");
+			ImGui::TextWrapped("");
+			ImGui::TextWrapped(" 'Radsi abych se vratil hned domu, nebo se o me bude maminka bat!'");
+			ImGui::TextWrapped("");
+			ImGui::TextWrapped("Kuratko chtelo najit svuj strom a vysplhat nahoru do hnizda, ale ouhle. Vsechny stromy vypadaly ze zdola uplne stejne! Jak pozna ten pravy?");
+			ImGui::TextWrapped("");
 
-		ImGui::Begin("he");
-		ImGui::Text("Hello");
-		ImGui::End();
+			if (ImGui::Button("Zacit hledat cestu domu ...")) {
+				storyProgress++;
+			}
+
+			ImGui::End();
+		}
+		else if (storyProgress == 1) {
+		}
+
+		
 
 		ImGui::Render();
 
