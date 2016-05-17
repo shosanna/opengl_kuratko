@@ -104,12 +104,34 @@ namespace gl
 		internal_format(GL_RGB), image_format(GL_RGB),
 		wrap_s(GL_REPEAT), wrap_t(GL_REPEAT),
 		filter_min(GL_LINEAR), filter_mag(GL_LINEAR) {
-		glGenTextures(1, &id);
 	}
 
-	Texture2D::~Texture2D() {
-		glDeleteTextures(1, &id);
-	}
+	//Texture2D::Texture2D(Texture2D&& t) :
+	//	width(t.width), height(t.height),
+	//	internal_format(t.internal_format), image_format(t.image_format),
+	//	wrap_s(t.wrap_s), wrap_t(t.wrap_t),
+	//	filter_min(t.filter_min), filter_mag(t.filter_mag),
+	//	id(t.id)
+	//{
+	//	t.id = -1;
+	//}
+
+	//Texture2D& Texture2D::operator=(Texture2D&& rhs)
+	//{
+	//	if (&rhs != this) {
+	//		Texture2D t(std::move(rhs));
+	//		using std::swap;
+	//		swap(*this, t);
+	//	}
+	//	return *this;
+	//}
+
+	//Texture2D::~Texture2D() {
+	//	if (id != -1) {
+	//		glDeleteTextures(1, &id);
+	//	}
+	//}
+
 
 	void Texture2D::load_png(const std::string& filename) {
 		std::vector<unsigned char> data;

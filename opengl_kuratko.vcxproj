@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="src\format.cpp" />
     <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\gl_utils.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
     <ClCompile Include="src\imgui_draw.cpp" />
@@ -147,9 +148,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\format.h" />
-    <ClInclude Include="include\glad\glad.h" />
-    <ClInclude Include="include\khr\khrplatform.h" />
+    <ClInclude Include="include\gl_utils.hpp" />
+    <ClInclude Include="include\imconfig.h" />
+    <ClInclude Include="include\imgui.h" />
+    <ClInclude Include="include\imgui_impl_sdl.h" />
+    <ClInclude Include="include\imgui_internal.h" />
+    <ClInclude Include="include\lodepng.h" />
+    <ClInclude Include="include\stb_rect_pack.h" />
+    <ClInclude Include="include\stb_textedit.h" />
+    <ClInclude Include="include\stb_truetype.h" />
+    <ClInclude Include="include\stopwatch.hpp" />
     <ClInclude Include="include\tgaimage.h" />
+    <ClInclude Include="include\tiled.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

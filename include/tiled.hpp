@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 
 class Tile
@@ -23,6 +24,19 @@ class TileMap
 public:
 	std::vector<Tile> tiles;
 	std::vector<int> map;
+	std::unordered_map<int, Tile> guids;
+
+	std::size_t N() {
+		// !!! MAPA MUSI BYT CTVERCOVA !!!
+		int N = sqrt(map.size());
+		assert(N*N == map.size());
+
+		return N;
+	}
+
+	int& gid(std::size_t i, std::size_t j) {		
+		return map[i * N() + j];
+	}
 };
 
 TileMap load_tiles(const std::string& filename) {
@@ -30,6 +44,7 @@ TileMap load_tiles(const std::string& filename) {
 
 	pt::ptree tree;
 	pt::read_xml(filename, tree);
+	std::unordered_map<int, Tile> guids;
 
 	std::vector<Tile> tiles;
 
@@ -50,6 +65,8 @@ TileMap load_tiles(const std::string& filename) {
 				source
 			});
 
+			guids[gid] = tiles.back();
+
 		}
 	}
 
@@ -62,7 +79,7 @@ TileMap load_tiles(const std::string& filename) {
 		}
 	}
 
-	return {tiles, map};
+	return {tiles, map, guids};
 }
 
 

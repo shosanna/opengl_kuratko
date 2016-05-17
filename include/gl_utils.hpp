@@ -75,21 +75,43 @@ namespace gl
 		void unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 	};
 
+	class TextureID {
+	public:
+		GLuint id;
+		TextureID() { glGenTextures(1, &id); }
+		
+		TextureID(const TextureID&) = delete;
+		TextureID& operator=(const TextureID&) = delete;
+
+		TextureID(TextureID&& rhs) : id(rhs.id) { rhs.id = -1; }
+		TextureID& operator=(TextureID&& rhs) {
+			TextureID t(std::move(rhs));
+			std::swap(id, t.id);
+			return *this;
+		}
+
+		~TextureID() { if (id != -1) glDeleteTextures(1, &id); }
+
+		operator GLuint() const { return id; }
+	};
+
 	class Texture2D
 	{
 	public:
-		GLuint id, width, height, internal_format, image_format;
+		TextureID id;
+		GLuint width, height, internal_format, image_format;
 		GLuint wrap_s, wrap_t, filter_min, filter_mag;
 
 		bool invalid = false;
 
 		Texture2D();
-		~Texture2D();
+		~Texture2D() = default;
 
 		Texture2D(const Texture2D&) = delete;
-		Texture2D(Texture2D&&) = delete;
 		Texture2D& operator=(const Texture2D&) = delete;
-		Texture2D& operator=(Texture2D&&) = delete;
+
+		Texture2D(Texture2D&& t) = default;
+		Texture2D& operator=(Texture2D&&) = default;
 
 		void load_png(const std::string& filename);
 		void load(GLuint width, GLuint height, unsigned char* data);
@@ -133,7 +155,7 @@ namespace gl
 
 		~SpriteRenderer() = default;
 
-		void draw_sprite(Texture2D& texture, glm::vec2 pos, glm::vec2 size = glm::vec2(10, 10), glm::vec3 color = glm::vec3(1.0f));
+		void draw_sprite(Texture2D& texture, glm::vec2 pos, glm::vec2 size = glm::vec2(32, 32), glm::vec3 color = glm::vec3(1.0f));
 	private:
 		Shader& shader;
 

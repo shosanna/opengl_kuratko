@@ -13,48 +13,84 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Knihovny">
+      <UniqueIdentifier>{8554ba61-b00b-4726-bf64-ee3796cacafc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Knihovny Header">
+      <UniqueIdentifier>{946ffbdc-a82a-49de-b4f1-58e05c4257f2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\glad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui_demo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui_draw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\imgui_impl_sdl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lodepng.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\tgaimage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\format.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Knihovny</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gl_utils.cpp">
+      <Filter>Knihovny</Filter>
+    </ClCompile>
+    <ClCompile Include="src\glad.c">
+      <Filter>Knihovny</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui.cpp">
+      <Filter>Knihovny</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_demo.cpp">
+      <Filter>Knihovny</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_draw.cpp">
+      <Filter>Knihovny</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_impl_sdl.cpp">
+      <Filter>Knihovny</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lodepng.cpp">
+      <Filter>Knihovny</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tgaimage.cpp">
+      <Filter>Knihovny</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\tgaimage.h">
+    <ClInclude Include="include\gl_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\glad\glad.h">
+    <ClInclude Include="include\stopwatch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\khr\khrplatform.h">
+    <ClInclude Include="include\tiled.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\format.h">
-      <Filter>Header Files</Filter>
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imconfig.h">
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imgui.h">
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imgui_impl_sdl.h">
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imgui_internal.h">
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lodepng.h">
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_rect_pack.h">
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_textedit.h">
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_truetype.h">
+      <Filter>Knihovny Header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tgaimage.h">
+      <Filter>Knihovny Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

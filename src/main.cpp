@@ -14,6 +14,8 @@
 // PNG image
 #include <lodepng.h>
 
+#include <tiled.hpp>
+
 // IMGUI
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
@@ -32,150 +34,177 @@
 const GLuint WIDTH = 800, HEIGHT = 600;
 
 SDL_Window* setupSDL() {
-  std::cout << "Starting SDL context, OpenGL 4.1" << std::endl;
-  // Init SDL
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
+	std::cout << "Starting SDL context, OpenGL 4.1" << std::endl;
+	// Init SDL
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  // Set all the required options for SDL
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	// Set all the required options for SDL
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
-  // Create a GLFWwindow object that we can use for GLFW's functions
-  SDL_Window* window = SDL_CreateWindow("Kuratko Nufik", 200, 200, WIDTH,
-                                        HEIGHT, SDL_WINDOW_OPENGL);
-  if (window == nullptr) {
-    std::cout << "Failed to create GLFW window" << std::endl;
-    return nullptr;
-  }
+	// Create a GLFWwindow object that we can use for GLFW's functions
+	SDL_Window* window = SDL_CreateWindow("Kuratko Nufik", 200, 200, WIDTH,
+		HEIGHT, SDL_WINDOW_OPENGL);
+	if (window == nullptr) {
+		std::cout << "Failed to create GLFW window" << std::endl;
+		return nullptr;
+	}
 
-  return window;
+	return window;
 }
 
 void tile_at(std::vector<float>& vbo_data, float x, float y, float size) {
-  float off = size / 2;
+	float off = size / 2;
 
-  // Position      Color             Texture coords
-  std::vector<float> vertices{
-      x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-      x + off, y - off, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-      x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+	// Position      Color             Texture coords
+	std::vector<float> vertices{
+		x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		x + off, y - off, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-      x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-      x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-      x - off, y + off, 1.0f, 1.0f, 1.0,  0.0f, 0.0f,
-  };
+		x + off, y + off, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		x - off, y - off, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		x - off, y + off, 1.0f, 1.0f, 1.0,  0.0f, 0.0f,
+	};
 
-  for (float v : vertices) {
-    vbo_data.push_back(v);
-  }
+	for (float v : vertices) {
+		vbo_data.push_back(v);
+	}
 }
 
 int current_x = 0;
 int current_y = 0;
 
 void draw_vector_triangles(const std::vector<float>& vbo_data) {
-  // sending vertices to the graphic cards and making it active
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vbo_data.size(),
-               vbo_data.data(), GL_STATIC_DRAW);
-  glDrawArrays(GL_TRIANGLES, 0, vbo_data.size());
+	// sending vertices to the graphic cards and making it active
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vbo_data.size(),
+		vbo_data.data(), GL_STATIC_DRAW);
+	glDrawArrays(GL_TRIANGLES, 0, vbo_data.size());
 }
 
 void game_loop(SDL_Window* window) {
-  using namespace gl;
-  using namespace glm;
+	using namespace gl;
+	using namespace glm;
 
-  // Setup ImGui binding
-  ImGui_ImplSdlGL3_Init(window);
+	// Setup ImGui binding
+	ImGui_ImplSdlGL3_Init(window);
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  glViewport(0, 0, WIDTH, HEIGHT);
+	glViewport(0, 0, WIDTH, HEIGHT);
 
-  VAO vao;
-  VBO vbo;
+	VAO vao;
+	VBO vbo;
 
-  // Inicializovani indexu TEXTUR
-  GLuint textures[2];
-  glGenTextures(2, textures);
 
-  Texture2D t1;
-  t1.load_png("grass.png");
+	SDL_Event event;
 
-  Texture2D t2;
-  t2.image_format = GL_RGBA;
-  t2.internal_format = GL_RGBA;
-  t2.load_png("kuratko.png");
+	Shader spriteShader("res/sprite");
+	SpriteRenderer sprite(spriteShader);
 
-  SDL_Event event;
+	spriteShader.set("projection", ortho(0.0f, (float)WIDTH, (float)HEIGHT, 0.0f, -1.0f, 1.0f));
 
-  Shader spriteShader("res/sprite");
-  SpriteRenderer sprite(spriteShader);
+	auto map = load_tiles("xmlova.tmx");
 
-  spriteShader.set("projection", ortho(0.0f, (float)WIDTH, (float)HEIGHT, 0.0f, -1.0f, 1.0f));
 
-  while (true) {
-    ImGui_ImplSdlGL3_NewFrame(window);
+	std::unordered_map<int, Texture2D> textures;
 
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT ||
-          (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE)) {
-        return;
-      }
+	for (size_t i = 0; i < map.tiles.size(); i++)
+	{
+		Texture2D t;
+		t.image_format = GL_RGBA;
+		t.internal_format = GL_RGBA;
+		t.load_png("res/" + map.tiles[i].filename);
 
-      if (event.type == SDL_KEYDOWN) {
-        switch (event.key.keysym.sym) {
-          case 'w': current_y--; break;
-          case 's': current_y++; break;
-          case 'a': current_x--; break;
-          case 'd': current_x++; break;
-        }
-      }
+		textures[map.tiles[i].gid] = std::move(t);
+	}
 
-      ImGui_ImplSdlGL3_ProcessEvent(&event);
-    }
+	Texture2D t1;
+	t1.image_format = GL_RGBA;
+	t1.internal_format = GL_RGBA;
+	t1.load_png("res/kuratko_basic_klaciky.png");
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
 
-    int tile_size = 10;
-    sprite.draw_sprite(t2, vec2(current_x * tile_size, current_y * tile_size), vec2(32, 32));
+	while (true) {
+		ImGui_ImplSdlGL3_NewFrame(window);
 
-    ImGui::Begin("he");
-    ImGui::Text("Hello");
-    ImGui::End();
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT ||
+				(event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE)) {
+				return;
+			}
 
-    ImGui::Render();
+			if (event.type == SDL_KEYDOWN) {
+				switch (event.key.keysym.sym) {
+				case 'w': current_y--; break;
+				case 's': current_y++; break;
+				case 'a': current_x--; break;
+				case 'd': current_x++; break;
+				}
+			}
 
-    SDL_GL_SwapWindow(window);
-  }
+			ImGui_ImplSdlGL3_ProcessEvent(&event);
+		}
+
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		int tile_size = 32;
+
+
+
+		for (size_t i = 0; i < map.N(); i++)
+		{
+			for (size_t j = 0; j < map.N(); j++)
+			{
+				auto id = map.gid(i, j) - 1;
+				if (textures.count(id) > 0) {
+					auto&& tex = textures[id];
+					sprite.draw_sprite(tex, vec2(j * tile_size, i * tile_size));
+				}
+			}
+
+		}
+
+		sprite.draw_sprite(t1, vec2(current_x * tile_size, current_y * tile_size));
+
+
+		ImGui::Begin("he");
+		ImGui::Text("Hello");
+		ImGui::End();
+
+		ImGui::Render();
+
+		SDL_GL_SwapWindow(window);
+	}
 }
 
 // The MAIN function, from here we start the application and run the game loop
 int main(int, char**) {
-  // auto res = load_tiles("xmlova.tmx");
 
-  SDL_Window* window = setupSDL();
-  if (!window) return -1;
 
-  SDL_GLContext context = SDL_GL_CreateContext(window);
-  if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-    std::cout << "Failed to initialize OpenGL context" << std::endl;
-    return 1;
-  }
+	SDL_Window* window = setupSDL();
+	if (!window) return -1;
 
-  game_loop(window);
+	SDL_GLContext context = SDL_GL_CreateContext(window);
+	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+		std::cout << "Failed to initialize OpenGL context" << std::endl;
+		return 1;
+	}
 
-  SDL_GL_DeleteContext(context);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
+	game_loop(window);
 
-  return 0;
+	SDL_GL_DeleteContext(context);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+
+	return 0;
 }
 
 int clamp(int low, int current, int high) {
-  if (current < low) return low;
-  if (current > high) return high;
-  return current;
+	if (current < low) return low;
+	if (current > high) return high;
+	return current;
 }
